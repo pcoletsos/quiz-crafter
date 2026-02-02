@@ -7,14 +7,17 @@ const Player = () => {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | null>>({});
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const quizId = window.localStorage.getItem("activeQuizId");
     if (!quizId) {
       setError("Select a quiz from the library.");
+      setLoading(false);
       return;
     }
+    setLoading(true);
     window.quizCrafter.getQuiz(quizId).then((result) => {
       if (result.ok) {
         const sorted = {
@@ -28,6 +31,7 @@ const Player = () => {
       } else {
         setError(result.errors.map((item) => item.message).join(" "));
       }
+      setLoading(false);
     });
   }, []);
 
@@ -46,6 +50,14 @@ const Player = () => {
 
   const handleFinish = async () => {
     if (!quiz) return;
+    const hasMissingCorrect = quiz.questions.some(
+      (question) => !question.options.some((option) => option.isCorrect),
+    );
+    if (hasMissingCorrect) {
+      setError("Cannot finish: one or more questions are missing a correct option.");
+      return;
+    }
+
     const payload: QuizResultSaveInput = {
       quizId: quiz.id,
       answers: quiz.questions.map((question) => {
@@ -53,7 +65,7 @@ const Player = () => {
         return {
           questionId: question.id,
           selectedOptionId: answers[question.id] ?? null,
-          correctOptionId: correct?.id ?? "",
+          correctOptionId: correct!.id,
         };
       }),
     };
@@ -65,10 +77,26 @@ const Player = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <section className="panel">
+        <div className="loading">Loading quiz...</div>
+      </section>
+    );
+  }
+
   if (error) {
     return (
       <section className="panel">
-        <div className="alert">{error}</div>
+        <div className="alert alert--inline">
+          <div>
+            <strong>Unable to start quiz.</strong>
+            <p className="muted">{error}</p>
+          </div>
+          <button className="ghost" onClick={() => window.location.reload()}>
+            Retry
+          </button>
+        </div>
       </section>
     );
   }

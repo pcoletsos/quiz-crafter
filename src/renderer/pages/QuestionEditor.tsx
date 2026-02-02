@@ -17,17 +17,23 @@ const QuestionEditor = () => {
   const [text, setText] = useState("");
   const [options, setOptions] = useState<Option[]>([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveNotice, setSaveNotice] = useState("");
   const navigate = useNavigate();
 
   const loadQuestion = async () => {
+    setLoading(true);
     const quizId = window.localStorage.getItem("activeQuizId");
     if (!quizId) {
       setError("Select a quiz from the library.");
+      setLoading(false);
       return;
     }
     const result = await window.quizCrafter.getQuiz(quizId);
     if (!result.ok) {
       setError(result.errors.map((item) => item.message).join(" "));
+      setLoading(false);
       return;
     }
 
@@ -53,6 +59,7 @@ const QuestionEditor = () => {
       ]);
     }
     setError("");
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -109,7 +116,10 @@ const QuestionEditor = () => {
   };
 
   const handleSave = async () => {
-    if (!quiz) return;
+    if (!quiz) {
+      setError("Select a quiz from the library.");
+      return;
+    }
     const payload = {
       quizId: quiz.id,
       questionId: question?.id,
@@ -121,16 +131,33 @@ const QuestionEditor = () => {
         orderIndex: index,
       })),
     };
-    const result = await window.quizCrafter.saveQuestion(payload);
-    if (result.ok) {
-      window.localStorage.setItem("activeQuestionId", result.data.id);
-      setQuestion(result.data);
-      setOptions(result.data.options.slice().sort((a, b) => a.orderIndex - b.orderIndex));
-      setError("");
-    } else {
-      setError(result.errors.map((item) => item.message).join(" "));
+    setSaving(true);
+    setSaveNotice("");
+    setError("");
+    try {
+      const result = await window.quizCrafter.saveQuestion(payload);
+      if (result.ok) {
+        window.localStorage.setItem("activeQuestionId", result.data.id);
+        setQuestion(result.data);
+        setOptions(result.data.options.slice().sort((a, b) => a.orderIndex - b.orderIndex));
+        setSaveNotice("Question saved.");
+      } else {
+        setError(result.errors.map((item) => item.message).join(" "));
+      }
+    } catch {
+      setError("Unable to save question. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <section className="panel">
+        <div className="loading">Loading question...</div>
+      </section>
+    );
+  }
 
   return (
     <section className="panel">
@@ -171,7 +198,18 @@ const QuestionEditor = () => {
             <label>Help text</label>
             <input placeholder="Optional hint" />
           </div>
-          {error && <div className="alert">{error}</div>}
+          {error && (
+            <div className="alert alert--inline">
+              <div>
+                <strong>Save failed.</strong>
+                <p className="muted">{error}</p>
+              </div>
+              <button className="ghost" onClick={handleSave}>
+                Retry
+              </button>
+            </div>
+          )}
+          {saveNotice && <div className="notice">{saveNotice}</div>}
         </div>
 
         <div className="card">
@@ -211,6 +249,7 @@ const QuestionEditor = () => {
             <button className="ghost" onClick={handleAddOption}>
               Add Option
             </button>
+            {saving && <span className="muted">Saving...</span>}
           </div>
         </div>
       </div>

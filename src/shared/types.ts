@@ -3,6 +3,7 @@ export type Id = string;
 export interface QuizSummary {
   id: Id;
   title: string;
+  description: string | null;
   createdAt: string;
   updatedAt: string;
   questionCount: number;
@@ -11,6 +12,7 @@ export interface QuizSummary {
 export interface Quiz {
   id: Id;
   title: string;
+  description: string | null;
   createdAt: string;
   updatedAt: string;
   questions: Question[];
@@ -36,11 +38,13 @@ export interface Option {
 
 export interface QuizCreateInput {
   title: string;
+  description?: string | null;
 }
 
 export interface QuizUpdateInput {
   id: Id;
   title: string;
+  description?: string | null;
 }
 
 export interface QuestionSaveInput {

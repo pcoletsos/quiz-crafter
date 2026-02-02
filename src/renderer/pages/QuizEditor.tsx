@@ -5,23 +5,29 @@ import type { Quiz } from "../../shared/types";
 const QuizEditor = () => {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const loadQuiz = async () => {
+    setLoading(true);
     const quizId = window.localStorage.getItem("activeQuizId");
     if (!quizId) {
       setError("Select a quiz from the library.");
+      setLoading(false);
       return;
     }
     const result = await window.quizCrafter.getQuiz(quizId);
     if (result.ok) {
       setQuiz(result.data);
       setTitle(result.data.title);
+      setDescription(result.data.description ?? "");
       setError("");
     } else {
       setError(result.errors.map((item) => item.message).join(" "));
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -30,7 +36,11 @@ const QuizEditor = () => {
 
   const handleSave = async () => {
     if (!quiz) return;
-    const result = await window.quizCrafter.updateQuiz({ id: quiz.id, title });
+    const result = await window.quizCrafter.updateQuiz({
+      id: quiz.id,
+      title,
+      description,
+    });
     if (result.ok) {
       loadQuiz();
     } else {
@@ -88,7 +98,12 @@ const QuizEditor = () => {
           </div>
           <div className="field">
             <label>Description</label>
-            <textarea placeholder="Optional description" rows={4} />
+            <textarea
+              placeholder="Optional description"
+              rows={4}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
           </div>
           <div className="actions">
             <button className="ghost" onClick={() => navigate("/")}>
@@ -98,7 +113,17 @@ const QuizEditor = () => {
               Save Quiz
             </button>
           </div>
-          {error && <div className="alert">{error}</div>}
+          {error && (
+            <div className="alert alert--inline">
+              <div>
+                <strong>Save failed.</strong>
+                <p className="muted">{error}</p>
+              </div>
+              <button className="ghost" onClick={handleSave}>
+                Retry
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="card">
@@ -106,6 +131,7 @@ const QuizEditor = () => {
             <h3>Questions</h3>
             <span className="badge">{quiz?.questions.length ?? 0} total</span>
           </div>
+          {loading && <div className="loading">Loading questions...</div>}
           {!quiz && <p className="muted">Select a quiz to view questions.</p>}
           {quiz?.questions.length === 0 && (
             <div className="empty-state">

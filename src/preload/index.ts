@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IPC_CHANNELS } from "../shared/ipc";
 import type {
   IpcResult,
   Question,
@@ -14,6 +13,20 @@ import type {
   QuizUpdateInput,
   OptionReorderInput,
 } from "../shared/types";
+
+const IPC_CHANNELS = {
+  getAppVersion: "app:getVersion",
+  quizList: "quiz:list",
+  quizGet: "quiz:get",
+  quizCreate: "quiz:create",
+  quizUpdate: "quiz:update",
+  quizDelete: "quiz:delete",
+  questionSave: "question:save",
+  questionReorder: "question:reorder",
+  optionReorder: "option:reorder",
+  resultsSave: "results:save",
+  resultsGet: "results:get",
+} as const;
 
 contextBridge.exposeInMainWorld("quizCrafter", {
   getAppVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.getAppVersion),

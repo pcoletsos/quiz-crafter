@@ -5,13 +5,22 @@ import type { QuizSummary } from "../../shared/types";
 const Home = () => {
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; onUndo?: () => void } | null>(
     null,
   );
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "rename">("create");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalDescription, setModalDescription] = useState("");
+  const [modalError, setModalError] = useState("");
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+  const [modalTarget, setModalTarget] = useState<QuizSummary | null>(null);
   const pendingDelete = useRef<{ id: string; timeoutId: number } | null>(null);
   const navigate = useNavigate();
 
   const loadQuizzes = () => {
+    setLoading(true);
     window.quizCrafter
       .listQuizzes()
       .then((result) => {
@@ -21,8 +30,12 @@ const Home = () => {
         } else {
           setError(result.errors.map((item) => item.message).join(" "));
         }
+        setLoading(false);
       })
-      .catch(() => setError("Unable to load quizzes."));
+      .catch(() => {
+        setError("Unable to load quizzes.");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -38,26 +51,61 @@ const Home = () => {
     }
   };
 
-  const handleCreate = async () => {
+  const openModal = (mode: "create" | "rename", quiz?: QuizSummary) => {
     finalizePendingDelete();
-    const title = window.prompt("Quiz title", "Untitled Quiz");
-    if (!title) return;
-    const result = await window.quizCrafter.createQuiz({ title });
-    if (result.ok) {
-      loadQuizzes();
-    } else {
-      setError(result.errors.map((item) => item.message).join(" "));
-    }
+    setModalMode(mode);
+    setModalTarget(quiz ?? null);
+    setModalTitle(quiz?.title ?? "");
+    setModalDescription(quiz?.description ?? "");
+    setModalError("");
+    setModalOpen(true);
   };
 
-  const handleRename = async (quiz: QuizSummary) => {
-    const title = window.prompt("Rename quiz", quiz.title);
-    if (!title || title === quiz.title) return;
-    const result = await window.quizCrafter.updateQuiz({ id: quiz.id, title });
-    if (result.ok) {
-      loadQuizzes();
-    } else {
-      setError(result.errors.map((item) => item.message).join(" "));
+  const handleCreate = () => openModal("create");
+
+  const handleRename = (quiz: QuizSummary) => openModal("rename", quiz);
+
+  const handleModalClose = () => {
+    if (modalSubmitting) return;
+    setModalOpen(false);
+  };
+
+  const handleModalSubmit = async () => {
+    const title = modalTitle.trim();
+    const description = modalDescription.trim();
+    if (!title) {
+      setModalError("Title is required.");
+      return;
+    }
+    setModalSubmitting(true);
+    setModalError("");
+    try {
+      if (modalMode === "create") {
+        const result = await window.quizCrafter.createQuiz({
+          title,
+          description: description || null,
+        });
+        if (result.ok) {
+          setModalOpen(false);
+          loadQuizzes();
+        } else {
+          setModalError(result.errors.map((item) => item.message).join(" "));
+        }
+      } else if (modalTarget) {
+        const result = await window.quizCrafter.updateQuiz({
+          id: modalTarget.id,
+          title,
+          description: description || null,
+        });
+        if (result.ok) {
+          setModalOpen(false);
+          loadQuizzes();
+        } else {
+          setModalError(result.errors.map((item) => item.message).join(" "));
+        }
+      }
+    } finally {
+      setModalSubmitting(false);
     }
   };
 
@@ -104,8 +152,19 @@ const Home = () => {
       </header>
 
       <div className="panel__body">
-        {error && <div className="alert">{error}</div>}
-        {!error && quizzes.length === 0 && (
+        {error && (
+          <div className="alert alert--inline">
+            <div>
+              <strong>Could not load quizzes.</strong>
+              <p className="muted">{error}</p>
+            </div>
+            <button className="ghost" onClick={loadQuizzes}>
+              Retry
+            </button>
+          </div>
+        )}
+        {loading && <div className="loading">Loading quizzes...</div>}
+        {!error && !loading && quizzes.length === 0 && (
           <div className="empty-state">
             <h3>No quizzes yet</h3>
             <p>Create your first quiz to get started.</p>
@@ -119,7 +178,14 @@ const Home = () => {
                   <h3>{quiz.title}</h3>
                   <span className="badge">{quiz.questionCount} questions</span>
                 </div>
-                <p className="muted">Last updated {new Date(quiz.updatedAt).toLocaleDateString()}</p>
+                <p className="muted">
+                  {quiz.description?.trim()
+                    ? quiz.description
+                    : "No description provided."}
+                </p>
+                <p className="muted">
+                  Last updated {new Date(quiz.updatedAt).toLocaleDateString()}
+                </p>
                 <div className="actions">
                   <button className="ghost" onClick={() => handleOpen(quiz)}>
                     Open
@@ -145,6 +211,47 @@ const Home = () => {
               Undo
             </button>
           )}
+        </div>
+      )}
+
+      {modalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal">
+            <div className="modal__header">
+              <h3>{modalMode === "create" ? "New Quiz" : "Rename Quiz"}</h3>
+              <button className="ghost" onClick={handleModalClose}>
+                Close
+              </button>
+            </div>
+            <div className="modal__body">
+              <div className="field">
+                <label>Title</label>
+                <input
+                  value={modalTitle}
+                  onChange={(event) => setModalTitle(event.target.value)}
+                  placeholder="Enter quiz title"
+                />
+              </div>
+              <div className="field">
+                <label>Description</label>
+                <textarea
+                  rows={3}
+                  value={modalDescription}
+                  onChange={(event) => setModalDescription(event.target.value)}
+                  placeholder="Optional description"
+                />
+              </div>
+              {modalError && <div className="alert">{modalError}</div>}
+            </div>
+            <div className="modal__footer">
+              <button className="ghost" onClick={handleModalClose} disabled={modalSubmitting}>
+                Cancel
+              </button>
+              <button className="primary" onClick={handleModalSubmit} disabled={modalSubmitting}>
+                {modalMode === "create" ? "Create" : "Save"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>

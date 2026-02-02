@@ -6,32 +6,55 @@ const Results = () => {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const quizId = window.localStorage.getItem("activeQuizId");
     if (!quizId) {
       setError("Select a quiz from the library.");
+      setLoading(false);
       return;
     }
-    window.quizCrafter.getQuiz(quizId).then((quizResult) => {
+    setLoading(true);
+    Promise.all([
+      window.quizCrafter.getQuiz(quizId),
+      window.quizCrafter.getResultsSummary(quizId),
+    ]).then(([quizResult, summary]) => {
       if (quizResult.ok) {
         setQuiz(quizResult.data);
+      } else {
+        setError(quizResult.errors.map((item) => item.message).join(" "));
       }
-    });
-    window.quizCrafter.getResultsSummary(quizId).then((summary) => {
       if (summary.ok) {
         setResult(summary.data.lastResult ?? null);
       } else {
         setError(summary.errors.map((item) => item.message).join(" "));
       }
+      setLoading(false);
     });
   }, []);
+
+  if (loading) {
+    return (
+      <section className="panel">
+        <div className="loading">Loading results...</div>
+      </section>
+    );
+  }
 
   if (error) {
     return (
       <section className="panel">
-        <div className="alert">{error}</div>
+        <div className="alert alert--inline">
+          <div>
+            <strong>Unable to load results.</strong>
+            <p className="muted">{error}</p>
+          </div>
+          <button className="ghost" onClick={() => window.location.reload()}>
+            Retry
+          </button>
+        </div>
       </section>
     );
   }
