@@ -1,0 +1,9 @@
+# Default owner
+* @pcoletsos
+
+# Critical governance and CI
+/.github/ @pcoletsos
+/CONTRIBUTING.md @pcoletsos
+/AGENTS.md @pcoletsos
+/CLAUDE.md @pcoletsos
+/GEMINI.md @pcoletsos

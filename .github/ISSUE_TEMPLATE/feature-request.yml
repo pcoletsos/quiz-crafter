@@ -1,0 +1,52 @@
+name: Feature Request
+description: Propose a scoped product or engineering enhancement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep feature requests scoped and milestone-backed.
+        Use `Backlog` when no thematic milestone applies.
+  - type: input
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or developer problem should be solved?
+      placeholder: Quiz play flow does not show progress history.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe the smallest valuable change.
+      placeholder: Add per-question progress timeline in results.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Repo Scope
+      description: Which files/directories are expected to change?
+      placeholder: src/renderer/pages/Results.tsx and shared types.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - Timeline renders for completed quiz
+        - Existing results summary remains intact
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I will ensure this issue has a milestone (`Backlog` if needed).
+          required: true

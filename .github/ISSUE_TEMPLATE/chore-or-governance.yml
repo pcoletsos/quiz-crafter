@@ -1,0 +1,41 @@
+name: Chore Or Governance
+description: Track workflow, tooling, CI, docs, or repository operating-system updates.
+title: "[Chore]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for repo operations work (docs/process/CI/guardrails).
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: Introduce contribution guardrails workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: changes
+    attributes:
+      label: Planned Changes
+      placeholder: |
+        - Add or modify .github workflows
+        - Update CONTRIBUTING.md and adapters
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation Plan
+      placeholder: Run npm run build and guardrail validation script.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I will ensure this issue has a milestone (`Backlog` if needed).
+          required: true

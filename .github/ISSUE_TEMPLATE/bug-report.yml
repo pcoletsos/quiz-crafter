@@ -1,0 +1,62 @@
+name: Bug Report
+description: Report a defect in Quiz Crafter behavior.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening this issue:
+        - Search for duplicates.
+        - Set a milestone (`Backlog` if no themed milestone applies).
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the bug.
+      placeholder: Crash when opening quiz editor
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps To Reproduce
+      description: Provide clear reproduction steps.
+      placeholder: |
+        1. Open app
+        2. Select quiz
+        3. Click edit
+        4. Observe crash
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      placeholder: Editor opens without crashing.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      placeholder: App exits with an exception.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Affected Scope
+      description: Which area is impacted?
+      placeholder: src/main database migration path
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I will ensure this issue has a milestone (`Backlog` if needed).
+          required: true

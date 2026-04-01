@@ -1,5 +1,7 @@
 # Milestones
 
+Source-of-truth note: GitHub milestones are authoritative. This file is a planning snapshot only.
+
 Note: One Codex run per phase is the recommended strategy.
 
 | Phase | Scope | Acceptance Criteria | Effort |
